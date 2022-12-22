@@ -1,10 +1,10 @@
 const router = require('express').Router();
 const { celebrate, Joi } = require('celebrate');
 const {
-   getMovies, postMovie, deleteMovie,
+  getMovies, postMovie, deleteMovie,
 } = require('../controllers/movies');
 
-// создаёт фильм 
+// создаёт фильм
 router.post('/', celebrate({
   body: Joi.object().keys({
     country: Joi.string().required(),
@@ -17,7 +17,7 @@ router.post('/', celebrate({
     thumbnail: Joi.string().required().pattern(/(http[s]?:\/\/[www.]?\w{1,}((\W\w{1,}){1,})?\.\w{2,}[#$]?)/),
     nameRU: Joi.string().required(),
     nameEN: Joi.string().required(),
-    movieId: Joi.string().required(),
+    movieId: Joi.number().required(),
   }),
 }), postMovie);
 
