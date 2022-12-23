@@ -18,16 +18,15 @@ const options = {
 require('dotenv').config();
 const expres = require('express');
 const mongoose = require('mongoose');
+
+const { MONGOOSE_DATABASE = 'mongodb://localhost:27017/bitfilmsdb' } = process.env;
 const bodyParser = require('body-parser');
-const { celebrate, Joi, errors } = require('celebrate');
-const {
-  login, postUser,
-} = require('./controllers/users');
-const auth = require('./middlewares/auth');
+const { errors } = require('celebrate');
 const NotFound = require('./errors/not-found');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
+const centralizedError = require('./middlewares/centralized-error');
 
-mongoose.connect('mongodb://localhost:27017/bitfilmsdb');
+mongoose.connect(MONGOOSE_DATABASE);
 
 const app = expres();
 
@@ -38,28 +37,8 @@ app.use(bodyParser.json());
 
 app.use(requestLogger);
 
-// Вход(авторизация) и регистрация
-app.post('/signin', celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required(),
-  }).unknown(true),
-}), login);
-app.post('/signup', celebrate({
-  body: Joi.object().keys({
-    name: Joi.string().min(2).max(30),
-    email: Joi.string().required().email(),
-    password: Joi.string().required(),
-  }).unknown(true),
-}), postUser);
-
-// Аутенфикация
-app.use(auth);
-
-// Все запросы на /users
-app.use('/users', require('./routes/users'));
-// Все запросы на /cards
-app.use('/movies', require('./routes/movies'));
+// Все запросы на /
+app.use('/', require('./routes/index'));
 
 // Не существующие запросы
 app.use('/', (req, res, next) => {
@@ -73,10 +52,7 @@ app.use(errorLogger);
 app.use(errors());
 
 // Централизованный обработчик
-app.use((err, req, res, next) => {
-  res.status(err.statusCode).send({ message: err.message });
-  next();
-});
+app.use(centralizedError);
 
 app.listen(3001, () => {
   console.log('server started');
